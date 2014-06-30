@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+{% autoescape true %}
+<!--
+Design by Free CSS Templates
+http://www.freecsstemplates.org
+Released for free under a Creative Commons Attribution 2.5 License
+
+Name       : Scoreboard 
+Description: A two-column, fixed-width design with dark color scheme.
+Version    : 1.0
+Released   : 20130602
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+{% include "pages/headTag.html" %}
+<body>
+<div id="wrapper">
+	{% include "/pages/header.html" %}
+	<div id="page" class="container">
+		<div id="content">
+			<div class="title">
+				<h2>Results</h2>
+			</div>
+			<table id="customers" class="pure-skin-mine pure-table pure-table-bordered">
+				<thead>
+				<tr>
+					<th>Property</th>
+					<th>Value</th>
+				<tr>
+				</thead>
+				<tbody>
+   {%for query in queryArray %}
+	{%for element in query %}
+		
+		{% if element == 'content' %}
+		<tr class="pure-table-odd">
+			<td>{{element}} </td><td> <a href="{{query[element][0]|safe}}">{{ query[element][1] }}</a></td>
+		{% elif element == 'contactMap'%}
+		<tr class="pure-table-odd">
+			<td>{{element}} </td><td><a href="{{query[element][0]|safe}}">{{ query[element][1] }}</a> (<a href="visualize?file={{query[element][2]|safe}}" target="_blank">Visualize</a>)</td>
+		{% else %}
+		<tr>
+		    	<td>{{  element }} </td><td> {{query[element]}}</td>
+		{% endif %}
+		<tr>
+	{% endfor %}
+</tbody>
+</table>
+	----
+    {% endfor %}
+    <br>
+
+
+		</div>
+		{% include "/pages/normalSidebar.html" %}
+
+	</div>
+</div>
+{% include "/pages/footer.html" %}
+</body>
+</html>
+{% endautoescape %}
