@@ -166,7 +166,7 @@ def resolveAnnotation(annotation):
 
 def generateContactMap(bnglFile,graphType):
     pointer = tempfile.mkstemp(suffix='.bngl',text=True)
-    bngDistro  = '../../bng2/Perl2/'
+    bngDistro  = '~/bionetgen/bng2/Perl2/'
     name = pointer[1].split('.')[0]
     with open(pointer[1],'w' ) as f:
         f.write(bnglFile)
