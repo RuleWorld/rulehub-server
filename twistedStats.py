@@ -91,7 +91,10 @@ def resolveAnnotation(annotation):
             finalArray = []
             goGrammar = pyp.Suppress(pyp.Literal('<name>')) +  pyp.Word(pyp.alphanums + ' -_') + pyp.Suppress(pyp.Literal('</name>')) 
             for x in tmp:
-                finalArray.append(str(goGrammar.parseString(str(x))[0]))
+                try:
+                    finalArray.append(str(goGrammar.parseString(str(x))[0]))
+                except pyp.ParseBaseException:
+                    continue
             tmp = finalArray
             resolveAnnotation.db[annotation] = tmp
             tmpArray['tags'] =  tmp
