@@ -230,13 +230,13 @@ def gml2cyjson(gmlText):
             tmp['data']['parent'] =  str(gmlText.node[node]['gid'])
         jsonDict['elements']['nodes'].append(tmp)
     for link in gmlText.edge:
-        print gmlText.edge[link]
         for dlink in gmlText.edge[link]:
-            tmp = {'data':{}}
-            tmp['data']['source'] = int(link)
-            tmp['data']['target'] = int(dlink)
-            tmp['data']['id'] = '{0}_{1}'.format(tmp['data']['source'],tmp['data']['target'])
-            jsonDict['elements']['edges'].append(tmp)
+            if link != '' and dlink != '':
+                tmp = {'data':{}}
+                tmp['data']['source'] = int(link)
+                tmp['data']['target'] = int(dlink)
+                tmp['data']['id'] = '{0}_{1}'.format(tmp['data']['source'],tmp['data']['target'])
+                jsonDict['elements']['edges'].append(tmp)
 
     jsonDict['layout'] = {
     'name': 'cose',
