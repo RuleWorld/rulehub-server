@@ -404,11 +404,12 @@ class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
                                  app_identity.get_default_gcs_bucket_name())
     
             gcs_filename = '/{1}/{0}'.format(element,bucket_name)
-            blob_key = CreateFile(gcs_filename,bnglContent.encode('utf-8',"replace"))
-
-            taskqueue.add(url='/processfileq', params={'element':element,'bnglKey':blob_key,
+            try:
+                blob_key = CreateFile(gcs_filename,bnglContent.encode('utf-8',"replace"))
+                taskqueue.add(url='/processfileq', params={'element':element,'bnglKey':blob_key,
                                                             'modelSubmission':modelSubmissionString})
-
+            except:
+                print 'encoding error'
         self.redirect('/')
  
 

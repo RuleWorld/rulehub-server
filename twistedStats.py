@@ -21,7 +21,7 @@ import urllib2
 
 import tempfile
 import subprocess
-from os import getcwd
+from os import getcwd,remove
 # Restrict to a particular path.
 
 
@@ -173,8 +173,15 @@ def generateContactMap(bnglFile,graphType):
     name = pointer[1].split('.')[0]
     with open(pointer[1],'w' ) as f:
         f.write(bnglFile)
-    subprocess.call(['perl',bngDistro +'visualize.pl',pointer[1],
-            graphType,graphType],cwd=bngDistro)
+    try:
+        subprocess.call(['perl',bngDistro +'visualize.pl',pointer[1],
+                graphType,graphType],cwd=bngDistro)
+    except OSError:
+        #TODO: we have to return a proper error message. Right now it's just an empty file
+        #alternatively we could recognize empty files as error messages
+        open('{1}_{0}.gml'.format(graphType,name)).close()
+    finally:
+        remove(pointer[1])
     fileName =    '{1}_{0}.gml'.format(graphType,name)
     return fileName
 
@@ -296,6 +303,8 @@ class AnnotationServer(xmlrpc.XMLRPC):
         result = gml2cyjson(gml)
         jsonStr = json.dumps(result,indent=1, separators=(',', ': '))
         result = {'jsonStr':jsonStr,'gmlStr':gmlText}
+        
+        remove(fileName)
         return result
 
 
