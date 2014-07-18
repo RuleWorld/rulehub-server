@@ -293,8 +293,8 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
 
  
 
-#address = 'http://127.0.0.1:9200'
-address = 'http://54.214.249.43:9200'
+address = 'http://127.0.0.1:9200'
+#address = 'http://54.214.249.43:9200'
 def processAnnotations(bnglContent):
     logging.info('starting annotation processing')
     annotationDict = parseAnnotations.parseAnnotations(bnglContent)
@@ -740,14 +740,14 @@ class ModelSearchHandler(webapp2.RequestHandler):
     pcopy = params.copy()
     if offsetval - doc_limit >= 0:
       pcopy['offset'] = offsetval - doc_limit
-      prev_link = '/psearch?' + urllib.urlencode(pcopy)
+      prev_link = '/msearch?' + urllib.urlencode(pcopy)
     else:
       prev_link = None
     if ((offsetval + doc_limit <= self._OFFSET_LIMIT)
         and (returned_count == doc_limit)
         and (offsetval + returned_count < number_found)):
       pcopy['offset'] = offsetval + doc_limit
-      next_link = '/psearch?' + urllib.urlencode(pcopy)
+      next_link = '/msearch?' + urllib.urlencode(pcopy)
     else:
       next_link = None
     return (prev_link, next_link)

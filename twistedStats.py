@@ -23,7 +23,7 @@ import tempfile
 import subprocess
 from os import getcwd,remove
 # Restrict to a particular path.
-
+import datetime
 
 # Create server
 port = 9200
@@ -59,8 +59,11 @@ def resolveAnnotations(annotations):
 
 def removeTags(taggedInformation):
         taggedInformation2 = taggedInformation.decode('ascii','ignore')
-        goGrammar = pyp.Suppress('<' + pyp.Word(pyp.alphanums) + '>') +  pyp.Word(pyp.alphanums + pyp.alphas8bit + ' ._-') + pyp.Suppress('</' + pyp.Word(pyp.alphanums) + '>')
-        tmp = goGrammar.parseString(str(taggedInformation2))
+        try:
+            goGrammar = pyp.Suppress('<' + pyp.Word(pyp.alphanums) + '>') +  pyp.Word(pyp.alphanums + pyp.alphas8bit + ' .,_-') + pyp.Suppress('</' + pyp.Word(pyp.alphanums) + '>')
+            tmp = goGrammar.parseString(str(taggedInformation2))
+        except pyp.ParseException:
+            tmp = [taggedInformation2]
         return tmp[0]
     
 def resolveAnnotation(annotation):
@@ -168,18 +171,37 @@ def resolveAnnotation(annotation):
 
 
 def generateContactMap(bnglFile,graphType):
+    import signal
+    import os
+    import time
     pointer = tempfile.mkstemp(suffix='.bngl',text=True)
-    bngDistro  = '/home/ubuntu/bionetgen/bng2/Perl2/'
+    #bngDistro  = '/home/ubuntu/bionetgen/bng2/Perl2/'
+    bngDistro = '/home/proto/workspace/bionetgen/bng2/Perl2/'
     name = pointer[1].split('.')[0]
+    timeout = 120
     with open(pointer[1],'w' ) as f:
         f.write(bnglFile)
     try:
-        subprocess.call(['perl',bngDistro +'visualize.pl',pointer[1],
+        
+        start = datetime.datetime.now()
+        result = subprocess.Popen(['perl',bngDistro +'visualize.pl',pointer[1],
                 graphType,graphType],cwd=bngDistro)
+        while result.poll() is None:
+            time.sleep(0.1)
+            now = datetime.datetime.now()
+            if (now - start).seconds > timeout:
+                os.kill(result.pid, signal.SIGKILL)
+                os.waitpid(-1, os.WNOHANG)
+                raise OSError
+        
+        #subprocess.call(['perl',bngDistro +'visualize.pl',pointer[1],
+        #       graphType,graphType],cwd=bngDistro)
     except OSError:
         #TODO: we have to return a proper error message. Right now it's just an empty file
         #alternatively we could recognize empty files as error messages
-        open('{1}_{0}.gml'.format(graphType,name)).close()
+        with open('{1}_{0}.gml'.format(graphType,name),'w') as f:
+            f.write('graph\n[]')
+
     #finally:
     #    remove(pointer[1])
     fileName =    '{1}_{0}.gml'.format(graphType,name)
@@ -282,17 +304,8 @@ def tmpGenerateCont(bnglFile,graphType):
 
 def simulateFile(bnglFile):
     pass
-    
-class AnnotationServer(xmlrpc.XMLRPC):
 
-
-    def xmlrpc_resolveAnnotations(self,annotations):
-
-        result = threads.deferToThread(resolveAnnotations,annotations)
-        return result
-  
-    def xmlrpc_getContactMap(self,bnglFile,graphType):
-
+def getContactMap(bnglFile,graphType):
         fileName = generateContactMap(bnglFile, graphType)
         try:
             with open(fileName) as f:
@@ -306,7 +319,21 @@ class AnnotationServer(xmlrpc.XMLRPC):
         
         #remove(fileName)
         return result
+    
+class AnnotationServer(xmlrpc.XMLRPC):
 
+
+    def xmlrpc_resolveAnnotations(self,annotations):
+
+        #result = threads.deferToThread(resolveAnnotations,annotations)
+        result = resolveAnnotations(annotations)
+        return result
+  
+    def xmlrpc_getContactMap(self,bnglFile,graphType):
+        #result = threads.deferToThread(getContactMap,bnglFile,graphType)
+        result = getContactMap(bnglFile,graphType)
+        return result
+    
 
 #server.register_function(is_even, "is_even")
 
@@ -320,9 +347,11 @@ if __name__ == '__main__':
     #gml = nx.read_gml('/tmp/tmpy0ug0r_contact.gml')
 
     #gml2cyjson(gml) 
-    #a = ['http://identifiers.org/pubmed/10514507']
+    #a = ['http://identifiers.org/biomodels.db/BIOMD0000000004', 'http://identifiers.org/biomodels.db/MODEL6614389071', 'http://identifiers.org/kegg.pathway/hsa04110']
 
-    #print resolveAnnotation(a[0])
+    #for element in a:
+    #    print element
+    #    print resolveAnnotation(element)
 
         
 
