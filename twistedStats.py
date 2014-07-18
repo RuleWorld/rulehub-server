@@ -175,8 +175,8 @@ def generateContactMap(bnglFile,graphType):
     import os
     import time
     pointer = tempfile.mkstemp(suffix='.bngl',text=True)
-    #bngDistro  = '/home/ubuntu/bionetgen/bng2/Perl2/'
-    bngDistro = '/home/proto/workspace/bionetgen/bng2/Perl2/'
+    bngDistro  = '/home/ubuntu/bionetgen/bng2/Perl2/'
+    #bngDistro = '/home/proto/workspace/bionetgen/bng2/Perl2/'
     name = pointer[1].split('.')[0]
     timeout = 120
     with open(pointer[1],'w' ) as f:
@@ -184,6 +184,7 @@ def generateContactMap(bnglFile,graphType):
     try:
         
         start = datetime.datetime.now()
+        print start
         result = subprocess.Popen(['perl',bngDistro +'visualize.pl',pointer[1],
                 graphType,graphType],cwd=bngDistro)
         while result.poll() is None:
@@ -197,6 +198,7 @@ def generateContactMap(bnglFile,graphType):
         #subprocess.call(['perl',bngDistro +'visualize.pl',pointer[1],
         #       graphType,graphType],cwd=bngDistro)
     except OSError:
+        print now
         #TODO: we have to return a proper error message. Right now it's just an empty file
         #alternatively we could recognize empty files as error messages
         with open('{1}_{0}.gml'.format(graphType,name),'w') as f:
