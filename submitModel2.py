@@ -281,7 +281,7 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
         bucket_name = os.environ.get('BUCKET_NAME',
                              app_identity.get_default_gcs_bucket_name())
 
-        gcs_filename = '/{1}/{0}'.format(element,bucket_name)
+        gcs_filename = '/{1}/{0}.bngl'.format(element,bucket_name)
         blob_key = CreateFile(gcs_filename,bnglContent.encode('utf-8'))
         
         taskqueue.add(url='/processfileq', params={'element':element,'bnglKey':blob_key,
@@ -293,8 +293,8 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
 
  
 
-address = 'http://127.0.0.1:9200'
-#address = 'http://54.214.249.43:9200'
+#address = 'http://127.0.0.1:9200'
+address = 'http://54.214.249.43:9200'
 def processAnnotations(bnglContent):
     logging.info('starting annotation processing')
     annotationDict = parseAnnotations.parseAnnotations(bnglContent)
@@ -333,7 +333,7 @@ class ModelDBFile(blobstore_handlers.BlobstoreUploadHandler):
         bucket_name = os.environ.get('BUCKET_NAME',
                              app_identity.get_default_gcs_bucket_name())
 
-        gcs_filename = '/{1}/{0}'.format(element,bucket_name)
+        gcs_filename = '/{1}/{0}.bngl'.format(element,bucket_name)
         blob_key = CreateFile(gcs_filename,bnglContent.encode('utf-8','replace'))
         
         modelSubmission = {}
@@ -403,7 +403,7 @@ class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
             bucket_name = os.environ.get('BUCKET_NAME',
                                  app_identity.get_default_gcs_bucket_name())
     
-            gcs_filename = '/{1}/{0}'.format(element,bucket_name)
+            gcs_filename = '/{1}/{0}.bngl'.format(element,bucket_name)
             try:
                 blob_key = CreateFile(gcs_filename,bnglContent.encode('utf-8',"replace"))
                 taskqueue.add(url='/processfileq', params={'element':element,'bnglKey':blob_key,
@@ -432,8 +432,10 @@ class ProcessAnnotation(webapp2.RequestHandler):
             blob_key = CreateFile(gcs_filename,str(convert(mapInfo['gmlStr'])))
 
             modelSubmission['contactMap'] = blob_key
-            modelSubmission['contactMapJson'] = json.loads(mapInfo['jsonStr'])
-
+            try:
+                modelSubmission['contactMapJson'] = json.loads(mapInfo['jsonStr'])
+            except ValueError:
+                modelSubmission['contactMapJson']
             parsedAnnotationDict,tagArray = processAnnotations(bnglContent)
             if 'author' in parsedAnnotationDict:
                 modelSubmission['author'] = [parsedAnnotationDict['author']]
@@ -861,9 +863,9 @@ class Description(webapp2.RequestHandler):
                 #self.response.write('{0} : {1}<br>'.format(element,dp[element]))
 
                 if element in ['content']:
-                    ndp[element] = ["serve/{1}?key={0}".format(dp[element],dp['name']),'BioNetGen file']
+                    ndp[element] = ["serve/{1}.bngl?key={0}".format(dp[element],dp['name']),'BioNetGen file']
                 elif element in ['contactMap']:
-                    ndp[element] = ["serve/{1}?key={0}".format(dp[element],dp['name']),'Contact Map in GML format',dp['name']]
+                    ndp[element] = ["serve/{1}.gml?key={0}".format(dp[element],dp['name']),'Contact Map in GML format',dp['name']]
                 elif element in ['contactMapJson','submitter','doc_id']:
                     continue
                 else:

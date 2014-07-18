@@ -316,7 +316,7 @@ def getContactMap(bnglFile,graphType):
         result = gml2cyjson(gml)
         jsonStr = json.dumps(result,indent=1, separators=(',', ': '))
         result = {'jsonStr':jsonStr,'gmlStr':gmlText}
-        
+        print gmlText
         #remove(fileName)
         return result
     
