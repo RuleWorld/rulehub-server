@@ -435,7 +435,7 @@ class ProcessAnnotation(webapp2.RequestHandler):
             try:
                 modelSubmission['contactMapJson'] = json.loads(mapInfo['jsonStr'])
             except ValueError:
-                modelSubmission['contactMapJson']
+                modelSubmission['contactMapJson'] = {'jsonStr':'','gmlStr':''}
             parsedAnnotationDict,tagArray = processAnnotations(bnglContent)
             if 'author' in parsedAnnotationDict:
                 modelSubmission['author'] = [parsedAnnotationDict['author']]
