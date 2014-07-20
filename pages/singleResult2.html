@@ -36,13 +36,29 @@ Released   : 20130602
 		<tr class="pure-table-odd">
 			<td>{{element}} </td><td> <a href="{{query[element][0]|safe}}">{{ query[element][1] }}</a></td>
 		{% elif element == 'contactMap'%}
+		</tr>
 		<tr class="pure-table-odd">
 			<td>{{element}} </td><td><a href="{{query[element][0]|safe}}">{{ query[element][1] }}</a> (<a href="visualize?file={{query[element][2]|safe}}" target="_blank">Visualize</a>)</td>
+		</tr>
+		{% elif element == 'structuredTags' %}
+		<tr class="pure-table-odd">
+			<td>
+			external tags
+			</td>
+			<td>  
+			{% for item in query[element][0] %}
+			<a href="{{ item[1] }}">{{ item[0]}}</a>
+			{% endfor %}
+			{% for item  in query[element][1] %}
+			item
+			{%endfor %}
+			</td>
+		</tr>
 		{% else %}
 		<tr>
 		    	<td>{{  element }} </td><td> {{query[element]}}</td>
 		{% endif %}
-		<tr>
+		</tr>
 	{% endfor %}
 </tbody>
 </table>

@@ -188,6 +188,7 @@ class ModelDoc(BaseDocumentManager):
               # The 'updated' field is always set to the current date.
               search.DateField(name=cls.UPDATED,
                   value=datetime.datetime.now().date()),
+              search.TextField(name=cls.MODEL_NAME,value=name),
               search.TextField(name=cls.MODEL_AUTHOR, value=author),
               search.TextField(name=cls.MODEL_KEYWORDS,value=keywords),
               search.TextField(name=cls.MODEL_SKEYWORDS, value=skeywords),

@@ -38,6 +38,7 @@ import parseAnnotations
 from google.appengine.api import urlfetch
 import logging
 logging.basicConfig(filename='/home/proto/rulehub.log',level=logging.DEBUG,format='%(asctime)s - %(levelname)s:%(message)s')
+from collections import OrderedDict
 
 
 from models import ModelInfo
@@ -845,11 +846,10 @@ class Description(webapp2.RequestHandler):
     '''
     details model description
     '''
-    
     def get(self):
         #query = ModelInfo.name
         #q = ModelInfo.query(query == self.request.get('file'))
-        ndp = {}
+        ndp = OrderedDict()
         queryArray = []
         p = ModelInfo.get_by_id(self.request.get('file'))
         
@@ -859,16 +859,28 @@ class Description(webapp2.RequestHandler):
         #    dp = p.to_dict()
         #    print dp.keys()
         #    print p.key
-            for element in dp:
+            
+            for element in sorted(dp.keys()):
                 #self.response.write('{0} : {1}<br>'.format(element,dp[element]))
-
                 if element in ['content']:
                     ndp[element] = ["serve/{1}.bngl?key={0}".format(dp[element],dp['name']),'BioNetGen file']
                 elif element in ['contactMap']:
                     ndp[element] = ["serve/{1}.gml?key={0}".format(dp[element],dp['name']),'Contact Map in GML format',dp['name']]
-                elif element in ['contactMapJson','submitter','doc_id']:
+                elif element in ['contactMapJson','submitter','doc_id','privacy']:
                     continue
-                else:
+                elif element in ['author','tags']:
+                    acc = ', '.join(dp[element])
+                    ndp[element] = acc
+                elif element in ['structuredTags']:
+                    lacc= []
+                    acc = []
+                    for el in dp[element]:
+                        if 'identifiers.org' in el:
+                            lacc.append(['{0}:{1}'.format(el.split('/')[-2],el.split('/')[-1]),el])
+                        else:
+                            acc.append(el)
+                    ndp[element] = [lacc,acc]
+                else:   
                     if dp[element] in [None,[]]:
                         continue
                     ndp[element] = dp[element]
