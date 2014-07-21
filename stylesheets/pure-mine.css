@@ -20,6 +20,27 @@ body {
     user-select: none;
 }
 
+dl.multiple-table { border-bottom: 1px solid #999; }
+    
+dl.multiple-table dt
+{
+    clear: left;
+    float: left;
+    width: 220px;
+    margin: 0;
+    padding: 5px;
+    border-top: 1px solid #999;
+    font-weight: bold;
+}
+
+dl.multiple-table dd
+{
+    margin-left: 230px;
+    padding: 5px;
+}
+
+dl.multiple-table dd.first { border-top: 1px solid #999; }
+
 /* Firefox: Get rid of the inner focus border */
 .pure-skin-mine .pure-button::-moz-focus-inner{
     padding: 0;

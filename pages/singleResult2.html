@@ -21,7 +21,7 @@ Released   : 20130602
 			<div class="title">
 				<h2>Results</h2>
 			</div>
-			<table id="customers" class="pure-skin-mine pure-table pure-table-bordered">
+			<table id="customers" class="pure-skin-mine pure-table pure-table-horizontal ">
 				<thead>
 				<tr>
 					<th>Property</th>
@@ -34,16 +34,16 @@ Released   : 20130602
 		
 		{% if element == 'content' %}
 		<tr class="pure-table-odd">
-			<td>{{element}} </td><td> <a href="{{query[element][0]|safe}}">{{ query[element][1] }}</a></td>
+			<td><b>{{element}}</b> </td><td> <a href="{{query[element][0]|safe}}">{{ query[element][1] }}</a></td>
 		{% elif element == 'contactMap'%}
 		</tr>
 		<tr class="pure-table-odd">
-			<td>{{element}} </td><td><a href="{{query[element][0]|safe}}">{{ query[element][1] }}</a> (<a href="visualize?file={{query[element][2]|safe}}" target="_blank">Visualize</a>)</td>
+			<td><b>{{element}} </b></td><td><a href="{{query[element][0]|safe}}">{{ query[element][1] }}</a> (<a href="visualize?file={{query[element][2]|safe}}" target="_blank">Visualize</a>)</td>
 		</tr>
 		{% elif element == 'structuredTags' %}
 		<tr class="pure-table-odd">
-			<td>
-			external tags
+			<td><b>
+			external tags</b>
 			</td>
 			<td>  
 			{% for item in query[element][0] %}
@@ -56,13 +56,13 @@ Released   : 20130602
 		</tr>
 		{% else %}
 		<tr>
-		    	<td>{{  element }} </td><td> {{query[element]}}</td>
+		    	<td><b>{{  element }}</b> </td><td> {{query[element]}}</td>
 		{% endif %}
 		</tr>
 	{% endfor %}
 </tbody>
 </table>
-	----
+	
     {% endfor %}
     <br>
 
