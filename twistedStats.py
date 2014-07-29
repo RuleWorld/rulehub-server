@@ -168,7 +168,35 @@ def resolveAnnotation(annotation):
         #finally:
     return tmpArray
 
+def generateTimeSeries(bnglFile):
+    import signal
+    import os
+    import time
+    pointer = tempfile.mkstemp(suffix='.bngl',text=True)
+    bngDistro  = '/home/ubuntu/bionetgen/bng2/'
+    #bngDistro = '/home/proto/workspace/bionetgen/bng2/'
 
+    timeout = 120
+    name = pointer[1].split('.')[0]
+
+    with open(pointer[1],'w' ) as f:
+        f.write(bnglFile)
+    try:
+        
+        start = datetime.datetime.now()
+        print start
+        result = subprocess.Popen(['perl',bngDistro +'BNG2.pl',pointer[1]])
+        while result.poll() is None:
+            time.sleep(0.1)
+            now = datetime.datetime.now()
+            if (now - start).seconds > timeout:
+                os.kill(result.pid, signal.SIGKILL)
+                os.waitpid(-1, os.WNOHANG)
+                raise OSError
+    except OSError:
+            return None
+    fileName = '{0}.gdat'.format(name)
+    return fileName
 
 def generateContactMap(bnglFile,graphType):
     import signal
@@ -322,6 +350,16 @@ def getContactMap(bnglFile,graphType):
         #remove(fileName)
         return result
     
+def getTimeSeries(bnglFile):
+        fileName = generateTimeSeries(bnglFile)
+        try:
+            if fileName == None:
+                raise IOError
+            with open(fileName) as f:
+                gdatText = f.read()
+        except IOError:
+            gdatText = ''
+        return gdatText
 class AnnotationServer(xmlrpc.XMLRPC):
 
 
@@ -336,6 +374,9 @@ class AnnotationServer(xmlrpc.XMLRPC):
         result = getContactMap(bnglFile,graphType)
         return result
     
+    def xmlrpc_getTimeSeries(self,bnglFile):
+        result = getTimeSeries(bnglFile)
+        return result
 
 #server.register_function(is_even, "is_even")
 
