@@ -428,15 +428,26 @@ class ProcessAnnotation(webapp2.RequestHandler):
             if modelSubmission['name'] == '':
                 modelSubmission['name'] = element
             mapInfo = getMap(bnglContent,'contact')
+            pmapInfo = getMap(bnglContent,'process2')
 
-            gcs_filename = '/{1}/{0}.gml'.format(element,bucket_name)
+            gcs_filename = '/{1}/{0}_contact.gml'.format(element,bucket_name)
             blob_key = CreateFile(gcs_filename,str(convert(mapInfo['gmlStr'])))
-
             modelSubmission['contactMap'] = blob_key
             try:
                 modelSubmission['contactMapJson'] = json.loads(mapInfo['jsonStr'])
             except ValueError:
                 modelSubmission['contactMapJson'] = {'jsonStr':'','gmlStr':''}
+
+            gcs_filename = '/{1}/{0}_process.gml'.format(element,bucket_name)
+            blob_key2 = CreateFile(gcs_filename,str(convert(pmapInfo['gmlStr'])))
+            modelSubmission['processMap'] = blob_key2
+            try:
+                modelSubmission['processMapJson'] = json.loads(pmapInfo['jsonStr'])
+            except ValueError:
+                modelSubmission['processMapJson'] = {'jsonStr':'','gmlStr':''}
+
+
+
             parsedAnnotationDict,tagArray = processAnnotations(bnglContent)
             if 'author' in parsedAnnotationDict:
                 modelSubmission['author'] = [parsedAnnotationDict['author']]
@@ -865,8 +876,11 @@ class Description(webapp2.RequestHandler):
                 if element in ['content']:
                     ndp[element] = ["serve/{1}.bngl?key={0}".format(dp[element],dp['name']),'BioNetGen file']
                 elif element in ['contactMap']:
-                    ndp[element] = ["serve/{1}.gml?key={0}".format(dp[element],dp['name']),'Contact Map in GML format',dp['name']]
-                elif element in ['contactMapJson','submitter','doc_id','privacy']:
+                    ndp[element] = ["serve/{1}_contact.gml?key={0}".format(dp[element],dp['name']),'Contact Map in GML format',dp['name']]
+                elif element in ['processMap']:
+                    ndp[element] = ["serve/{1}_process.gml?key={0}".format(dp[element],dp['name']),'Process Map in GML format',dp['name']]
+
+                elif element in ['contactMapJson','submitter','doc_id','privacy','processMapJson']:
                     continue
                 elif element in ['author','tags']:
                     acc = ', '.join(dp[element])
@@ -923,14 +937,23 @@ class Visualize(webapp2.RequestHandler):
     calls cytoscape.js to visualize a contact map
     '''
     def get(self):
+        mapType = self.request.get('type')
         query = ModelInfo.name
         q = ModelInfo.query(query == self.request.get('file'))
         model = q.fetch(1)
         model = model[0].to_dict()
         
         template_values = {}
-        template_values['graph'] = convert(model['contactMapJson']['elements'])
-        template_values['layout'] = convert(model['contactMapJson']['layout'][0])
+
+        if mapType == 'contact':
+            modelMap = model['contactMapJson']
+            template_values['layout2'] = "{'coolingFactor': 0.95, 'initialTemp': 200,'nodeRepulsion': 100, 'nodeOverlap': 10, 'gravity': 650, 'padding': 4, 'name': 'cose', 'nestingFactor': 2, 'initialTemp ': 2000, 'minTemp': 1, 'numIter': 100, 'edgeElasticity': 500, 'idealEdgeLength': 10}"
+        elif mapType == 'process':
+            modelMap = model['processMapJson']
+            template_values['layout2'] = "{'name': 'grid','fit':true,'padding':30}"
+
+        template_values['graph'] = convert(modelMap['elements'])
+        template_values['layout'] = convert(modelMap['layout'][0])
         template =JINJA_ENVIRONMENT.get_template('/pages/visualize.html')
         self.response.write(template.render(template_values))
 

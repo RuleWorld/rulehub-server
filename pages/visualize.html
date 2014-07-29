@@ -10,7 +10,7 @@
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
 <script src="http://cytoscape.github.io/cytoscape.js/api/cytoscape.js-latest/cytoscape.min.js"></script>
 <script src="/stylesheets/cytoscape.js-panzoom.js"></script>
-
+<script src="http://cytoscape.github.io/cytoscape.js/api/cytoscape.js-latest/arbor.js"></script>
 
 
 <style>
@@ -74,8 +74,10 @@ $('#cy').cytoscape({
     }
   ],
   
-  layout:{'coolingFactor': 0.95, 'initialTemp': 200,'nodeRepulsion': 100, 'nodeOverlap': 10, 'gravity': 650, 'padding': 4, 'name': 'cose', 'nestingFactor': 2, 'initialTemp ': 2000, 'minTemp': 1, 'numIter': 100, 'edgeElasticity': 500, 'idealEdgeLength': 10},
+  //layout:{'coolingFactor': 0.95, 'initialTemp': 200,'nodeRepulsion': 100, 'nodeOverlap': 10, 'gravity': 650, 'padding': 4, 'name': 'cose', 'nestingFactor': 2, 'initialTemp ': 2000, 'minTemp': 1, 'numIter': 100, 'edgeElasticity': 500, 'idealEdgeLength': 10},
    
+   layout:{{layout2}},
+
   elements: {{graph}},
   
   ready: function(){
