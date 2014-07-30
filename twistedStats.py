@@ -27,6 +27,8 @@ import datetime
 
 # Create server
 port = 9200
+bngDistro  = '/home/ubuntu/bionetgen/bng2/'
+#bngDistro = '/home/proto/workspace/bionetgen/bng2/'
 
 #server = SimpleXMLRPCServer(("127.0.0.1", port), requestHandler=RequestHandler)
 
@@ -173,8 +175,6 @@ def generateTimeSeries(bnglFile):
     import os
     import time
     pointer = tempfile.mkstemp(suffix='.bngl',text=True)
-    bngDistro  = '/home/ubuntu/bionetgen/bng2/'
-    #bngDistro = '/home/proto/workspace/bionetgen/bng2/'
 
     timeout = 120
     name = pointer[1].split('.')[0]
@@ -185,7 +185,7 @@ def generateTimeSeries(bnglFile):
         
         start = datetime.datetime.now()
         print start
-        result = subprocess.Popen(['perl',bngDistro +'BNG2.pl',pointer[1]])
+        result = subprocess.Popen(['perl',bngDistro +'BNG2.pl','--outdir={0}'.format(os.sep.join(pointer[1].split(os.sep)[0:-1]) + os.sep),pointer[1]])
         while result.poll() is None:
             time.sleep(0.1)
             now = datetime.datetime.now()
@@ -203,8 +203,6 @@ def generateContactMap(bnglFile,graphType):
     import os
     import time
     pointer = tempfile.mkstemp(suffix='.bngl',text=True)
-    bngDistro  = '/home/ubuntu/bionetgen/bng2/Perl2/'
-    #bngDistro = '/home/proto/workspace/bionetgen/bng2/Perl2/'
     name = pointer[1].split('.')[0]
     timeout = 120
     with open(pointer[1],'w' ) as f:
@@ -213,8 +211,8 @@ def generateContactMap(bnglFile,graphType):
         
         start = datetime.datetime.now()
         print start
-        result = subprocess.Popen(['perl',bngDistro +'visualize.pl',pointer[1],
-                graphType,graphType],cwd=bngDistro)
+        result = subprocess.Popen(['perl',bngDistro +'Perl2/visualize.pl',pointer[1],
+                graphType,graphType],cwd=bngDistro+'Perl2/')
         while result.poll() is None:
             time.sleep(0.1)
             now = datetime.datetime.now()
