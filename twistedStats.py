@@ -27,8 +27,8 @@ import datetime
 
 # Create server
 port = 9200
-#bngDistro  = '/home/ubuntu/bionetgen/bng2/'
-bngDistro = '/home/proto/workspace/bionetgen/bng2/'
+bngDistro  = '/home/ubuntu/bionetgen/bng2/'
+#bngDistro = '/home/proto/workspace/bionetgen/bng2/'
 
 #server = SimpleXMLRPCServer(("127.0.0.1", port), requestHandler=RequestHandler)
 
