@@ -27,8 +27,8 @@ import datetime
 
 # Create server
 port = 9200
-bngDistro  = '/home/ubuntu/bionetgen/bng2/'
-#bngDistro = '/home/proto/workspace/bionetgen/bng2/'
+#bngDistro  = '/home/ubuntu/bionetgen/bng2/'
+bngDistro = '/home/proto/workspace/bionetgen/bng2/'
 
 #server = SimpleXMLRPCServer(("127.0.0.1", port), requestHandler=RequestHandler)
 
@@ -317,10 +317,26 @@ def gml2cyjson(gmlText):
 
     return jsonDict
 
- 
+def gdat2c3json(gdatText):
+    #from collections import OrderedDict
+    gdatlines = gdatText.split('\n')
+    labels = gdatlines[0].split()[1:]
+    dataPoints = [x.split() for x in gdatlines[1:]]
+    c3json = {'xs':{},'columns':[]}
+    for idx,label in enumerate(labels):
+        tmp = [label]
+        for dataPoint in dataPoints:
+            if dataPoint == []:
+                continue
+            tmp.append(dataPoint[idx])
+        c3json['columns'].append(tmp)
+    for label in labels[1:]:
+        c3json['xs'][label] = labels[0]
+    return c3json
+     
+
 def tmpGenerateCont(bnglFile,graphType):
         fileName = generateContactMap(bnglFile, graphType)
-        print '++++',fileName
         try:
             gml = nx.read_gml(fileName)
         except IOError:
@@ -334,6 +350,9 @@ def simulateFile(bnglFile):
     pass
 
 def getContactMap(bnglFile,graphType):
+        '''
+        calls John's bgn map generator
+        '''
         fileName = generateContactMap(bnglFile, graphType)
         try:
             with open(fileName) as f:
@@ -356,8 +375,11 @@ def getTimeSeries(bnglFile):
             with open(fileName) as f:
                 gdatText = f.read()
         except IOError:
-            gdatText = ''
-        return gdatText
+            return {'jsonStr':'','gdatStr':''}
+        result = gdat2c3json(gdatText)
+        jsonStr = json.dumps(result,indent=1,separators=(',',':'))
+        result = {'jsonStr':jsonStr,'gdatStr':gdatText}
+        return result
 class AnnotationServer(xmlrpc.XMLRPC):
 
 

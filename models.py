@@ -17,7 +17,9 @@ class ModelInfo(ndb.Model):
     contactMap = ndb.BlobKeyProperty()
     contactMapJson = ndb.JsonProperty()
     processMap = ndb.BlobKeyProperty()
-    processMapJson = ndb.JsonProperty()
+    timeSeries = ndb.BlobKeyProperty()
+    timeSeriesJson = ndb.JsonProperty()
+    processMapJson = ndb.JsonProperty()     
     name = ndb.StringProperty()
     description = ndb.StringProperty()
     date = ndb.DateTimeProperty(auto_now_add=True)
@@ -28,7 +30,6 @@ class ModelInfo(ndb.Model):
     tags = ndb.StringProperty(repeated=True)
     structuredTags = ndb.StringProperty(repeated=True)
     privacy = ndb.StringProperty()
-    timeSeries = ndb.TextProperty()
     notes = ndb.StringProperty()
 
     doc_id = ndb.StringProperty()
@@ -51,6 +52,9 @@ class ModelInfo(ndb.Model):
             prod.notes = params['notes']
         if 'tags' in params:
             prod.tags=params['tags']
+        if 'timeSeries' in params:
+            prod.timeSeries = params['timeSeries']
+            prod.timeSeriesJson = params['timeSeriesJson']
         #if 'structuredTags' in params:
          #   prod.structuredTags=params['structuredTags'],
         #prod.put()

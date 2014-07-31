@@ -294,8 +294,8 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
 
  
 
-#address = 'http://127.0.0.1:9200'
-address = 'http://54.214.249.43:9200'
+address = 'http://127.0.0.1:9200'
+#address = 'http://54.214.249.43:9200'
 def processAnnotations(bnglContent):
     logging.info('starting annotation processing')
     annotationDict = parseAnnotations.parseAnnotations(bnglContent)
@@ -318,6 +318,12 @@ def getMap(bnglContent,mapType):
     mapContent = s.getContactMap(bnglContent,mapType)
     return mapContent
 
+def getSeries(bnglContent):
+    if 'simulate' in bnglContent: 
+        s = xmlrpclib.ServerProxy(address,GAEXMLRPCTransport())
+        timeSeries = s.getTimeSeries(bnglContent)
+        return timeSeries    
+    return {'jsonStr':'','gdatStr':''}
 class ModelDBFile(blobstore_handlers.BlobstoreUploadHandler):
 
     def post(self):
@@ -429,6 +435,7 @@ class ProcessAnnotation(webapp2.RequestHandler):
                 modelSubmission['name'] = element
             mapInfo = getMap(bnglContent,'contact')
             pmapInfo = getMap(bnglContent,'process2')
+            timeSeries = getSeries(bnglContent)
 
             gcs_filename = '/{1}/{0}_contact.gml'.format(element,bucket_name)
             blob_key = CreateFile(gcs_filename,str(convert(mapInfo['gmlStr'])))
@@ -437,6 +444,16 @@ class ProcessAnnotation(webapp2.RequestHandler):
                 modelSubmission['contactMapJson'] = json.loads(mapInfo['jsonStr'])
             except ValueError:
                 modelSubmission['contactMapJson'] = {'jsonStr':'','gmlStr':''}
+
+            if timeSeries['gdatStr'] != '':
+                gcs_filename = '/{1}/{0}.gdat'.format(element,bucket_name)
+                blob_key3 = CreateFile(gcs_filename,str(timeSeries['gdatStr']))
+                modelSubmission['timeSeries'] = blob_key3
+            try:
+                modelSubmission['timeSeriesJson'] = json.loads(timeSeries['jsonStr'])
+            except ValueError:
+                modelSubmission['timeSeriesJson'] = {}
+
 
             gcs_filename = '/{1}/{0}_process.gml'.format(element,bucket_name)
             blob_key2 = CreateFile(gcs_filename,str(convert(pmapInfo['gmlStr'])))
@@ -879,8 +896,10 @@ class Description(webapp2.RequestHandler):
                     ndp[element] = ["serve/{1}_contact.gml?key={0}".format(dp[element],dp['name']),'Contact Map in GML format',dp['name']]
                 elif element in ['processMap']:
                     ndp[element] = ["serve/{1}_process.gml?key={0}".format(dp[element],dp['name']),'Process Map in GML format',dp['name']]
+                elif element in ['timeSeries']:
+                    ndp[element] = ["serve/{1}.gdat?key={0}".format(dp[element],dp['name']),'Time series GDAT file ',dp['name']]
 
-                elif element in ['contactMapJson','submitter','doc_id','privacy','processMapJson']:
+                elif element in ['contactMapJson','submitter','doc_id','privacy','processMapJson','timeSeriesJson']:
                     continue
                 elif element in ['author','tags']:
                     acc = ', '.join(dp[element])
@@ -932,6 +951,7 @@ def convert(input):
     else:
         return input
 
+
 class Visualize(webapp2.RequestHandler):   
     '''
     calls cytoscape.js to visualize a contact map
@@ -945,17 +965,22 @@ class Visualize(webapp2.RequestHandler):
         
         template_values = {}
 
-        if mapType == 'contact':
-            modelMap = model['contactMapJson']
-            template_values['layout2'] = "{'coolingFactor': 0.95, 'initialTemp': 200,'nodeRepulsion': 100, 'nodeOverlap': 10, 'gravity': 650, 'padding': 4, 'name': 'cose', 'nestingFactor': 2, 'initialTemp ': 2000, 'minTemp': 1, 'numIter': 100, 'edgeElasticity': 500, 'idealEdgeLength': 10}"
-        elif mapType == 'process':
-            modelMap = model['processMapJson']
-            template_values['layout2'] = "{'name': 'grid','fit':true,'padding':30}"
+        if mapType == 'series':
+            template_values['data'] = convert(model['timeSeriesJson'])
+            template =JINJA_ENVIRONMENT.get_template('/pages/visualizeSeries.html')
+            self.response.write(template.render(template_values))
+        else:
+            if mapType == 'contact':
+                modelMap = model['contactMapJson']
+                template_values['layout2'] = "{'coolingFactor': 0.95, 'initialTemp': 200,'nodeRepulsion': 100, 'nodeOverlap': 10, 'gravity': 650, 'padding': 4, 'name': 'cose', 'nestingFactor': 2, 'initialTemp ': 2000, 'minTemp': 1, 'numIter': 100, 'edgeElasticity': 500, 'idealEdgeLength': 10}"
+            elif mapType == 'process':
+                modelMap = model['processMapJson']
+                template_values['layout2'] = "{'name': 'grid','fit':true,'padding':30}"
 
-        template_values['graph'] = convert(modelMap['elements'])
-        template_values['layout'] = convert(modelMap['layout'][0])
-        template =JINJA_ENVIRONMENT.get_template('/pages/visualize.html')
-        self.response.write(template.render(template_values))
+            template_values['graph'] = convert(modelMap['elements'])
+            template_values['layout'] = convert(modelMap['layout'][0])
+            template =JINJA_ENVIRONMENT.get_template('/pages/visualize.html')
+            self.response.write(template.render(template_values))
 
 class Image (webapp2.RequestHandler):
     def get(self):

@@ -45,6 +45,11 @@ Released   : 20130602
 		<tr class="pure-table-odd">
 			<td><b>{{element}} </b></td><td><a href="{{query[element][0]|safe}}">{{ query[element][1] }}</a> (<a href="visualize?file={{query[element][2]|safe}}&type=process" target="_blank">Visualize</a>)</td>
 		</tr>
+		{% elif element == 'timeSeries'%}
+		</tr>
+		<tr class="pure-table-odd">
+			<td><b>{{element}} </b></td><td><a href="{{query[element][0]|safe}}">{{ query[element][1] }}</a> (<a href="visualize?file={{query[element][2]|safe}}&type=series" target="_blank">Visualize</a>)</td>
+		</tr>
 
 		{% elif element == 'structuredTags' %}
 		<tr class="pure-table-odd">
