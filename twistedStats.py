@@ -27,8 +27,8 @@ import datetime
 
 # Create server
 port = 9200
-bngDistro  = '/home/ubuntu/bionetgen/bng2/'
-#bngDistro = '/home/proto/workspace/bionetgen/bng2/'
+#bngDistro  = '/home/ubuntu/bionetgen/bng2/'
+bngDistro = '/home/proto/workspace/bionetgen/bng2/'
 
 #server = SimpleXMLRPCServer(("127.0.0.1", port), requestHandler=RequestHandler)
 
@@ -97,7 +97,9 @@ def resolveAnnotation(annotation):
             goGrammar = pyp.Suppress(pyp.Literal('<name>')) +  pyp.Word(pyp.alphanums + ' -_') + pyp.Suppress(pyp.Literal('</name>')) 
             for x in tmp:
                 try:
-                    finalArray.append(str(goGrammar.parseString(str(x))[0]))
+                    tagString = str(goGrammar.parseString(str(x))[0])
+                    if tagString not in ['Systematic synonym']:
+                        finalArray.append(str(goGrammar.parseString(str(x))[0]))
                 except pyp.ParseBaseException:
                     continue
             tmp = finalArray
@@ -224,7 +226,7 @@ def generateContactMap(bnglFile,graphType):
         #subprocess.call(['perl',bngDistro +'visualize.pl',pointer[1],
         #       graphType,graphType],cwd=bngDistro)
     except OSError:
-        print now
+        #print now
         #TODO: we have to return a proper error message. Right now it's just an empty file
         #alternatively we could recognize empty files as error messages
         with open('{1}_{0}.gml'.format(graphType,name),'w') as f:

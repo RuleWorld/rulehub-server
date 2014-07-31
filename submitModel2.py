@@ -294,8 +294,8 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
 
  
 
-address = 'http://127.0.0.1:9200'
-#address = 'http://54.214.249.43:9200'
+#address = 'http://127.0.0.1:9200'
+address = 'http://54.214.249.43:9200'
 def processAnnotations(bnglContent):
     logging.info('starting annotation processing')
     annotationDict = parseAnnotations.parseAnnotations(bnglContent)
@@ -310,7 +310,7 @@ def processAnnotations(bnglContent):
         for element in tagArray:
             tagDict[element[0]] = element[1]
         logging.info(tagDict)
-    print '+++++',tagDict
+    print '+++++',tagDict,parsedAnnotationDict
     return parsedAnnotationDict,tagDict
 
 def getMap(bnglContent,mapType):
@@ -434,7 +434,7 @@ class ProcessAnnotation(webapp2.RequestHandler):
             if modelSubmission['name'] == '':
                 modelSubmission['name'] = element
             mapInfo = getMap(bnglContent,'contact')
-            pmapInfo = getMap(bnglContent,'process2')
+            pmapInfo = getMap(bnglContent,'process')
             timeSeries = getSeries(bnglContent)
 
             gcs_filename = '/{1}/{0}_contact.gml'.format(element,bucket_name)
@@ -897,7 +897,8 @@ class Description(webapp2.RequestHandler):
                 elif element in ['processMap']:
                     ndp[element] = ["serve/{1}_process.gml?key={0}".format(dp[element],dp['name']),'Process Map in GML format',dp['name']]
                 elif element in ['timeSeries']:
-                    ndp[element] = ["serve/{1}.gdat?key={0}".format(dp[element],dp['name']),'Time series GDAT file ',dp['name']]
+                    if dp[element] != None:
+                        ndp[element] = ["serve/{1}.gdat?key={0}".format(dp[element],dp['name']),'Time series GDAT file ',dp['name']]
 
                 elif element in ['contactMapJson','submitter','doc_id','privacy','processMapJson','timeSeriesJson']:
                     continue
