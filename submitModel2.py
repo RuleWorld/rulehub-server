@@ -341,7 +341,7 @@ class ModelDBFile(blobstore_handlers.BlobstoreUploadHandler):
                              app_identity.get_default_gcs_bucket_name())
 
         gcs_filename = '/{1}/{0}.bngl'.format(element,bucket_name)
-        blob_key = CreateFile(gcs_filename,bnglContent.encode('utf-8','replace'))
+        blob_key = CreateFile(gcs_filename,bnglContent.decode('utf-8','replace'))
         
         modelSubmission = {}
         if users.get_current_user():
@@ -976,7 +976,7 @@ class Visualize(webapp2.RequestHandler):
                 template_values['layout2'] = "{'coolingFactor': 0.95, 'initialTemp': 200,'nodeRepulsion': 100, 'nodeOverlap': 10, 'gravity': 650, 'padding': 4, 'name': 'cose', 'nestingFactor': 2, 'initialTemp ': 2000, 'minTemp': 1, 'numIter': 100, 'edgeElasticity': 500, 'idealEdgeLength': 10}"
             elif mapType == 'process':
                 modelMap = model['processMapJson']
-                template_values['layout2'] = "{'name': 'grid','fit':true,'padding':30}"
+                template_values['layout2'] = "{'name': 'breadthfirst','fit':true,'padding':30,'directed': false}"
 
             template_values['graph'] = convert(modelMap['elements'])
             template_values['layout'] = convert(modelMap['layout'][0])

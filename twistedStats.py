@@ -27,8 +27,8 @@ import datetime
 
 # Create server
 port = 9200
-bngDistro  = '/home/ubuntu/bionetgen/bng2/'
-#bngDistro = '/home/proto/workspace/bionetgen/bng2/'
+#bngDistro  = '/home/ubuntu/bionetgen/bng2/'
+bngDistro = '/home/proto/workspace/bionetgen/bng2/'
 
 #server = SimpleXMLRPCServer(("127.0.0.1", port), requestHandler=RequestHandler)
 
@@ -238,8 +238,14 @@ def generateContactMap(bnglFile,graphType):
     return fileName
 
 
+def inheritColor(gmlText,node):
+    pass
+
 
 def gml2cyjson(gmlText):
+    import random
+    r = lambda: random.randint(0,255)
+
     jsonDict = {}
     jsonDict['style'] =  [
     {
@@ -282,14 +288,31 @@ def gml2cyjson(gmlText):
     #for nd in gmlText.node:
     #    gmlText.node[nd].pop('id')
     #jsgrph = json_graph.node_link_data(gmlText)
+    colorDict = {}
     for node in gmlText.node:
         if gmlText.node[node] == {}:
             continue
         tmp = {'data':{}}
         tmp['data']['id'] = str(node)
         tmp['data']['label'] = str(gmlText.node[node]['label'])
+        
         if 'gid' in gmlText.node[node]:
             tmp['data']['parent'] =  str(gmlText.node[node]['gid'])
+            if str(gmlText.node[node]['gid']) not in colorDict:
+                if 'gid' in gmlText.node[str(gmlText.node[node]['gid'])]:
+                    if str(gmlText.node[str(gmlText.node[node]['gid'])]['gid']) not in colorDict:
+                        newColor = '#%02X%02X%02X' % (r(),r(),r())
+                        colorDict[str(gmlText.node[str(gmlText.node[node]['gid'])]['gid'])] = newColor
+                        colorDict[str(gmlText.node[node]['gid'])] = newColor
+                    else:
+                        colorDict[str(gmlText.node[node]['gid'])] = colorDict[str(gmlText.node[str(gmlText.node[node]['gid'])]['gid'])] 
+                else:
+                    colorDict[str(gmlText.node[node]['gid'])] = '#%02X%02X%02X' % (r(),r(),r())
+            colorDict[str(node)] = colorDict[str(gmlText.node[node]['gid'])]
+        if str(node) not in colorDict:
+            colorDict[str(node)] = '#%02X%02X%02X' % (r(),r(),r())
+        tmp['data']['faveColor'] = colorDict[str(node)]
+
         jsonDict['elements']['nodes'].append(tmp)
     for link in gmlText.edge:
         for dlink in gmlText.edge[link]:
@@ -298,6 +321,7 @@ def gml2cyjson(gmlText):
                 tmp['data']['source'] = int(link)
                 tmp['data']['target'] = int(dlink)
                 tmp['data']['id'] = '{0}_{1}'.format(tmp['data']['source'],tmp['data']['target'])
+                tmp['data']['faveColor'] = colorDict[str(link)]
                 jsonDict['elements']['edges'].append(tmp)
 
     jsonDict['layout'] = {
