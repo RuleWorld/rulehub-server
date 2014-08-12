@@ -68,7 +68,7 @@ def CreateFile(filename,content):
   """
   # Create a GCS file with GCS client.
   with gcs.open(filename, 'w') as f:
-    f.write(content)
+    f.write(content.encode('utf-8','replace'))
 
   # Blobstore API requires extra /gs to distinguish against blobstore files.
   blobstore_filename = '/gs' + filename
@@ -253,6 +253,13 @@ class SubmitBatch(webapp2.RequestHandler):
         template = JINJA_ENVIRONMENT.get_template('/pages/submitBatch.html')
         self.response.write(template.render(template_values))
 
+class Evaluate(webapp2.RequestHandler):
+    def get(self):
+
+        template_values = boilerplateParams(self.request.uri)
+        template = JINJA_ENVIRONMENT.get_template('/pages/evaluate.html')
+        self.response.write(template.render(template_values))
+
 
 class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
 
@@ -286,7 +293,7 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
         blob_key = CreateFile(gcs_filename,bnglContent.encode('utf-8'))
         
         taskqueue.add(url='/processfileq', params={'element':element,'bnglKey':blob_key,
-                                                        'modelSubmission':modelSubmissionString})
+                                                        'modelSubmission':modelSubmissionString},queue_name='amazonQueue')
         self.redirect('/')
 
         #modelSubmission.submitter =  users.get_current_user()        
@@ -355,8 +362,9 @@ class ModelDBFile(blobstore_handlers.BlobstoreUploadHandler):
         modelSubmissionString = pickle.dumps(modelSubmission)
 
         taskqueue.add(url='/processfileq', params={'element':element,'bnglKey':blob_key,
-                                                        'modelSubmission':modelSubmissionString})
-        self.redirect('/')
+                                                        'modelSubmission':modelSubmissionString},queue_name='amazonQueue')
+        template =JINJA_ENVIRONMENT.get_template('/pages/submitMessage.html')
+        self.response.write(template.render({}))
   
  
  
@@ -414,10 +422,11 @@ class ModelDBBatch(blobstore_handlers.BlobstoreUploadHandler):
             try:
                 blob_key = CreateFile(gcs_filename,bnglContent.encode('utf-8',"replace"))
                 taskqueue.add(url='/processfileq', params={'element':element,'bnglKey':blob_key,
-                                                            'modelSubmission':modelSubmissionString})
+                                                            'modelSubmission':modelSubmissionString},queue_name='amazonQueue')
             except:
                 print 'encoding error'
-        self.redirect('/')
+        template =JINJA_ENVIRONMENT.get_template('/pages/submitMessage.html')
+        self.response.write(template.render({}))
  
 
 class ProcessAnnotation(webapp2.RequestHandler):
@@ -433,37 +442,43 @@ class ProcessAnnotation(webapp2.RequestHandler):
             modelSubmission['content'] = blobstore.BlobKey(bnglKey)
             if modelSubmission['name'] == '':
                 modelSubmission['name'] = element
-            mapInfo = getMap(bnglContent,'contact')
-            pmapInfo = getMap(bnglContent,'process')
-            timeSeries = getSeries(bnglContent)
+            logging.info(';;; processing {0}'.format(element))
 
-            gcs_filename = '/{1}/{0}_contact.gml'.format(element,bucket_name)
-            blob_key = CreateFile(gcs_filename,str(convert(mapInfo['gmlStr'])))
-            modelSubmission['contactMap'] = blob_key
             try:
-                modelSubmission['contactMapJson'] = json.loads(mapInfo['jsonStr'])
-            except ValueError:
-                modelSubmission['contactMapJson'] = {'jsonStr':'','gmlStr':''}
+                mapInfo = getMap(bnglContent,'contact')
+                pmapInfo = getMap(bnglContent,'process')
 
-            if timeSeries['gdatStr'] != '':
-                gcs_filename = '/{1}/{0}.gdat'.format(element,bucket_name)
-                blob_key3 = CreateFile(gcs_filename,str(timeSeries['gdatStr']))
-                modelSubmission['timeSeries'] = blob_key3
+                gcs_filename = '/{1}/{0}_contact.gml'.format(element,bucket_name)
+                blob_key = CreateFile(gcs_filename,str(convert(mapInfo['gmlStr'])))
+                modelSubmission['contactMap'] = blob_key
+                try:
+                    modelSubmission['contactMapJson'] = json.loads(mapInfo['jsonStr'])
+                except ValueError:
+                    modelSubmission['contactMapJson'] = {'jsonStr':'','gmlStr':''}
+
+
+
+                gcs_filename = '/{1}/{0}_process.gml'.format(element,bucket_name)
+                blob_key2 = CreateFile(gcs_filename,str(convert(pmapInfo['gmlStr'])))
+                modelSubmission['processMap'] = blob_key2
+                try:
+                    modelSubmission['processMapJson'] = json.loads(pmapInfo['jsonStr'])
+                except ValueError:
+                    modelSubmission['processMapJson'] = {'jsonStr':'','gmlStr':''}
+            except xmlrpclib.ProtocolError:
+                logging.error('Cannot calculate maps')
             try:
-                modelSubmission['timeSeriesJson'] = json.loads(timeSeries['jsonStr'])
-            except ValueError:
-                modelSubmission['timeSeriesJson'] = {}
-
-
-            gcs_filename = '/{1}/{0}_process.gml'.format(element,bucket_name)
-            blob_key2 = CreateFile(gcs_filename,str(convert(pmapInfo['gmlStr'])))
-            modelSubmission['processMap'] = blob_key2
-            try:
-                modelSubmission['processMapJson'] = json.loads(pmapInfo['jsonStr'])
-            except ValueError:
-                modelSubmission['processMapJson'] = {'jsonStr':'','gmlStr':''}
-
-
+                timeSeries = getSeries(bnglContent)
+                if timeSeries['gdatStr'] != '':
+                    gcs_filename = '/{1}/{0}.gdat'.format(element,bucket_name)
+                    blob_key3 = CreateFile(gcs_filename,str(timeSeries['gdatStr']))
+                    modelSubmission['timeSeries'] = blob_key3
+                try:
+                    modelSubmission['timeSeriesJson'] = json.loads(timeSeries['jsonStr'])
+                except ValueError:
+                    modelSubmission['timeSeriesJson'] = {}
+            except xmlrpclib.ProtocolError:
+                logging.error('Cannot execute bngl file') 
 
             parsedAnnotationDict,tagArray = processAnnotations(bnglContent)
             if 'author' in parsedAnnotationDict:
@@ -893,9 +908,11 @@ class Description(webapp2.RequestHandler):
                 if element in ['content']:
                     ndp[element] = ["serve/{1}.bngl?key={0}".format(dp[element],dp['name']),'BioNetGen file']
                 elif element in ['contactMap']:
-                    ndp[element] = ["serve/{1}_contact.gml?key={0}".format(dp[element],dp['name']),'Contact Map in GML format',dp['name']]
+                    if dp[element] != None:
+                        ndp[element] = ["serve/{1}_contact.gml?key={0}".format(dp[element],dp['name']),'Contact Map in GML format',dp['name']]
                 elif element in ['processMap']:
-                    ndp[element] = ["serve/{1}_process.gml?key={0}".format(dp[element],dp['name']),'Process Map in GML format',dp['name']]
+                    if dp[element] != None:
+                        ndp[element] = ["serve/{1}_process.gml?key={0}".format(dp[element],dp['name']),'Process Map in GML format',dp['name']]
                 elif element in ['timeSeries']:
                     if dp[element] != None:
                         ndp[element] = ["serve/{1}.gdat?key={0}".format(dp[element],dp['name']),'Time series GDAT file ',dp['name']]
@@ -1111,6 +1128,7 @@ app = webapp2.WSGIApplication([
     ('/submit',Submit),
     ('/submitFile',SubmitFile),
     ('/submitBatch',SubmitBatch),
+    ('/evaluate',Evaluate),
     ('/query',Query2),
     ('/msearch',ModelSearchHandler),
     ('/sign', ModelDB),

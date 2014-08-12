@@ -108,7 +108,7 @@ class BaseDocumentManager(object):
 
 class ModelDoc(BaseDocumentManager):
   MID = 'mid'
-  _INDEX_NAME = 'model_doc2'
+  _INDEX_NAME = 'model_doc3'
   MODEL_NAME = 'model_name'
   MODEL_AUTHOR = 'model_author'
   MODEL_KEYWORDS = 'model_keywords'

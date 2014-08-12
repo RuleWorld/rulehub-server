@@ -178,7 +178,7 @@ def generateTimeSeries(bnglFile):
     import time
     pointer = tempfile.mkstemp(suffix='.bngl',text=True)
 
-    timeout = 120
+    timeout = 500
     name = pointer[1].split('.')[0]
 
     with open(pointer[1],'w' ) as f:
@@ -229,6 +229,7 @@ def generateContactMap(bnglFile,graphType):
         #print now
         #TODO: we have to return a proper error message. Right now it's just an empty file
         #alternatively we could recognize empty files as error messages
+        print 'system did not finish. Returning empty file'
         with open('{1}_{0}.gml'.format(graphType,name),'w') as f:
             f.write('graph\n[]')
 
@@ -365,9 +366,10 @@ def tmpGenerateCont(bnglFile,graphType):
         fileName = generateContactMap(bnglFile, graphType)
         try:
             gml = nx.read_gml(fileName)
+            result = gml2cyjson(gml)
         except IOError:
-            return ''
-        result = gml2cyjson(gml)
+            result = '{}'
+        
         with open('out.json','w') as f:
             return json.dumps(result,f,indent=1, separators=(',', ': '))
         
@@ -436,11 +438,11 @@ if __name__ == '__main__':
     #gml = nx.read_gml('/tmp/tmpy0ug0r_contact.gml')
 
     #gml2cyjson(gml) 
-    #a = ['http://identifiers.org/biomodels.db/BIOMD0000000004', 'http://identifiers.org/biomodels.db/MODEL6614389071', 'http://identifiers.org/kegg.pathway/hsa04110']
+    #a = ['http://identifiers.org/biomodels.db/BIOMD0000000048', 'http://identifiers.org/biomodels.db/MODEL6624193277', 'http://identifiers.org/pubmed/10514507', 'http://identifiers.org/taxonomy/10116']
 
     #for element in a:
     #    print element
-    #    print resolveAnnotation(element)
+    #   print resolveAnnotation(element)
 
         
 

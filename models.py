@@ -43,11 +43,10 @@ class ModelInfo(ndb.Model):
         """Create a new product entity from a subset of the given params dict
         values, and the given doc_id."""
         prod = cls(id=doc_id,
-            content=params['content'], contactMap=params['contactMap'],
-            contactMapJson=params['contactMapJson'], doc_id=doc_id,name=params['name'],
+            content=params['content'],  doc_id=doc_id,name=params['name'],
             submitter=params['submitter'],privacy=params['privacy'],tags=params['tags'],
-            structuredTags=params['structuredTags'],author=params['author'],
-            processMap=params['processMap'],processMapJson=params['processMapJson'])
+            structuredTags=params['structuredTags'],author=params['author']
+            )
         if 'notes' in params:
             prod.notes = params['notes']
         if 'tags' in params:
@@ -55,6 +54,12 @@ class ModelInfo(ndb.Model):
         if 'timeSeries' in params:
             prod.timeSeries = params['timeSeries']
             prod.timeSeriesJson = params['timeSeriesJson']
+        if 'processMap' in params:
+            prod.processMap=params['processMap']
+            prod.processMapJson=params['processMapJson']
+        if 'contactMap' in params:
+            prod.contactMap=params['contactMap']
+            prod.contactMapJson=params['contactMapJson']
         #if 'structuredTags' in params:
          #   prod.structuredTags=params['structuredTags'],
         #prod.put()

@@ -90,14 +90,14 @@ Released   : 20130602
 
       {% for result in search_response %}
         <p>
-        <span style="color: #014C9D;"><i>Model Name</i></span>: {{result.3|safe}}<br/>
+        <b><a href="/description?file={{result.1}}">{{result.3|safe}}</a></b><br/>
         <span style="color: #014C9D;"><i>Tags</i></span>: {{result.5}}<br/>
         <span style="color: #014C9D;"><i>Author</i></span>: {{result.4}}<br/>
-        <br/>
 
-          <a href="/description?file={{result.1}}">View model details</a>
+          
           
         </p>
+        
       {% endfor %}
 
       <p>
