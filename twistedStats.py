@@ -70,13 +70,26 @@ def removeTags(taggedInformation):
     
 def resolveAnnotation(annotation):
     if not hasattr(resolveAnnotation, 'db'):
+        servicesSignature = {'ch':bioservices.ChEBI,'bio':bioservices.BioModels,'uni':bioservices.UniProt,
+                                                        'k':bioservices.kegg.KeggParser,'qg':bioservices.QuickGO}
+
+        resolveAnnotation.services = {}
+        for signature in servicesSignature:
+            try:
+                resolveAnnotation.services[signature] = servicesSignature[signature](verbose=False)
+            except:
+                continue
         resolveAnnotation.db = {}
+        '''
         resolveAnnotation.ch = bioservices.ChEBI(verbose=False)
         resolveAnnotation.bio = bioservices.BioModels(verbose=False)
         resolveAnnotation.uni = bioservices.UniProt(verbose=False)
         resolveAnnotation.k = bioservices.kegg.KeggParser(verbose=False)
-        resolveAnnotation.s = bioservices.Service('name')
         resolveAnnotation.qg = bioservices.QuickGO(verbose=False)
+        '''
+        resolveAnnotation.s = bioservices.Service('name')
+ 
+
         resolveAnnotation.db['http://identifiers.org/uniprot/P62988'] = 'http://identifiers.org/uniprot/P62988'
         resolveAnnotation.db['http://identifiers.org/uniprot/P06842'] = 'http://identifiers.org/uniprot/P06842'
         resolveAnnotation.db['http://identifiers.org/uniprot/P07006'] = 'http://identifiers.org/uniprot/P06842'
@@ -90,8 +103,8 @@ def resolveAnnotation(annotation):
     #tAnnotation = re.search(':([^:]+:[^:]+$)',tAnnotation).group(1)
     tmpArray = {}
     try:
-        if 'obo.go' in annotation:
-            res = resolveAnnotation.qg.Term(tAnnotation)
+        if 'obo.go' in annotation and 'qg' in resolveAnnotation.services:
+            res = resolveAnnotation.services['qg'].Term(tAnnotation)
             tmp = res.findAll('name')
             finalArray = []
             goGrammar = pyp.Suppress(pyp.Literal('<name>')) +  pyp.Word(pyp.alphanums + ' -_') + pyp.Suppress(pyp.Literal('</name>')) 
@@ -106,33 +119,33 @@ def resolveAnnotation(annotation):
             resolveAnnotation.db[annotation] = tmp
             tmpArray['tags'] =  tmp
 
-        elif 'kegg' in annotation:
+        elif 'kegg' in annotation and 'k' in resolveAnnotation.services:
             
             data = resolveAnnotation.k.get(tAnnotation)
-            dict_data =  resolveAnnotation.k.parse(data)
+            dict_data =  resolveAnnotation.services['k'].parse(data)
             resolveAnnotation.db[annotation] = dict_data['name']
             tmpArray['tags'] =  resolveAnnotation.db[annotation]
             
-        elif 'uniprot' in annotation:
+        elif 'uniprot' in annotation and 'uni' in resolveAnnotation.services:
             identifier = annotation.split('/')[-1]
-            result = resolveAnnotation.uni.quick_search(identifier)
+            result = resolveAnnotation.services['uni'].quick_search(identifier)
             resolveAnnotation.db[annotation] = result[result.keys()[0]]['Protein names']
             tmpArray['tags'] = resolveAnnotation.db[annotation]
             
-        elif 'chebi' in annotation:
+        elif 'chebi' in annotation and 'ch' in resolveAnnotation.services:
             tmp = annotation.split('/')[-1]
             
-            entry = resolveAnnotation.ch.getLiteEntity(tmp)
+            entry = resolveAnnotation.services['ch'].getLiteEntity(tmp)
             for element in entry:
                 resolveAnnotation.db[annotation] = element['chebiAsciiName']
                 tmpArray['tags'] =  resolveAnnotation.db[annotation]
         elif 'cco' in annotation or 'pirsf' in annotation or 'pubchem' in annotation or 'omim' in annotation:
             tmpArray['ignore'] =  annotation
-        elif 'biomodels.db' in annotation:
+        elif 'biomodels.db' in annotation and 'bio' in resolveAnnotation.services:
             tmp = annotation.split('/')[-1]
             tmpArray = {}
             try:
-                request = resolveAnnotation.bio.getSimpleModelsByIds(tmp)
+                request = resolveAnnotation.services['bio'].getSimpleModelsByIds(tmp)
             except ValueError:
                 tmpArray['ignore'] = annotation
                 return tmpArray
@@ -438,10 +451,9 @@ if __name__ == '__main__':
     #gml = nx.read_gml('/tmp/tmpy0ug0r_contact.gml')
 
     #gml2cyjson(gml) 
-    #a = ['http://identifiers.org/biomodels.db/BIOMD0000000048', 'http://identifiers.org/biomodels.db/MODEL6624193277', 'http://identifiers.org/pubmed/10514507', 'http://identifiers.org/taxonomy/10116']
-
+    #a = ['http://identifiers.org/pubmed/10514507', 'http://identifiers.org/biomodels.db/BIOMD0000000048', 'http://identifiers.org/biomodels.db/MODEL6624193277', 'http://identifiers.org/taxonomy/10116']
     #for element in a:
-    #    print element
+    #   print element
     #   print resolveAnnotation(element)
 
         
