@@ -137,6 +137,9 @@ def dbmodel_key(model_name=DEFAULT_GUESTBOOK_NAME):
 
 
 class MainPage(webapp2.RequestHandler):
+    """
+    Handles the creation of the main rulehub page. This page is mostly empty for now though
+    """
     def get(self):
         if users.get_current_user():
             url = users.create_logout_url(self.request.uri)
@@ -157,15 +160,13 @@ class MainPage(webapp2.RequestHandler):
         self.response.write(template.render(template_values))
 
 class Submit(webapp2.RequestHandler):
-
+    """
+    Handles creation of the full manual submission page.
+    """
     def get(self):
         upload_url = blobstore.create_upload_url('/sign')
         
-        #model_name = self.request.get('model_name', DEFAULT_GUESTBOOK_NAME)
-        #models_query = ModelInfo.query(
-        #    ancestor=dbmodel_key(model_name)).order(-ModelInfo.date)
-        #models = models_query.fetch(10)
-        
+       
         if users.get_current_user():
             url = users.create_logout_url(self.request.uri)
             url_linktext = 'Logout'
@@ -190,6 +191,10 @@ class Submit(webapp2.RequestHandler):
         self.response.write(template.render(template_values))
 
 class SubmitFile(webapp2.RequestHandler):
+    """
+    Handles creation of the file upload page. The idea is to get author information
+    from internal annotations
+    """
     def get(self):
         upload_url = blobstore.create_upload_url('/signFile')
         
@@ -222,6 +227,9 @@ class SubmitFile(webapp2.RequestHandler):
         self.response.write(template.render(template_values))
 
 class SubmitBatch(webapp2.RequestHandler):
+    """
+    The setup for this page is essentially the same as that of submit file
+    """
     def get(self):
         upload_url = blobstore.create_upload_url('/signBatch')
         
@@ -304,6 +312,10 @@ class ModelDB(blobstore_handlers.BlobstoreUploadHandler):
 #address = 'http://127.0.0.1:9200'
 address = 'http://54.214.249.43:9200'
 def processAnnotations(bnglContent):
+    """
+    locally parses bngl annotations and puts them on a dictionary. Then sends those structures that refer to an external
+    databases and sends them to a remote server to resolve their name
+    """
     logging.info('starting annotation processing')
     annotationDict = parseAnnotations.parseAnnotations(bnglContent)
     parsedAnnotationDict = parseAnnotations.dict2DatabaseFormat(annotationDict)
@@ -321,18 +333,30 @@ def processAnnotations(bnglContent):
     return parsedAnnotationDict,tagDict
 
 def getMap(bnglContent,mapType):
+    """
+    send a bngl file to the remote server, get a visualization of said file back
+    """
     s = xmlrpclib.ServerProxy(address,GAEXMLRPCTransport())
     mapContent = s.getContactMap(bnglContent,mapType)
     return mapContent
 
 def getSeries(bnglContent):
+    """
+    Send a bngl file to the remote server, get a time series back
+    """
     if 'simulate' in bnglContent: 
         s = xmlrpclib.ServerProxy(address,GAEXMLRPCTransport())
         timeSeries = s.getTimeSeries(bnglContent)
         return timeSeries    
     return {'jsonStr':'','gdatStr':''}
 class ModelDBFile(blobstore_handlers.BlobstoreUploadHandler):
+    """
+    Classes that inherit from a Blobstoreuploadhandler are in charge of actually putting
+    stuff in the file server
 
+    this one in particular is in charge  of submitting an annotated file. no annotation handling 
+    is done here, this class is just in cahrge of fowarding the file to ProcessAnnotation in a taskqueue
+    """
     def post(self):
         # We set the same parent key on the 'Greeting' to ensure each greeting
         # is in the same entity group. Queries across the single entity group
@@ -434,6 +458,7 @@ class ProcessAnnotation(webapp2.RequestHandler):
             element = self.request.get('element')
             bnglKey = self.request.get('bnglKey')
             bnglContent = blobstore.fetch_data(bnglKey,0,900000)
+            #load up the modelSubmission object that was sent by the submit page class
             modelSubmission = pickle.loads(self.request.get('modelSubmission').encode('utf-8'))
             bucket_name = os.environ.get('BUCKET_NAME',
                                  app_identity.get_default_gcs_bucket_name())
@@ -445,6 +470,7 @@ class ProcessAnnotation(webapp2.RequestHandler):
             logging.info(';;; processing {0}'.format(element))
 
             try:
+                #get map information from the remote server
                 mapInfo = getMap(bnglContent,'contact')
                 pmapInfo = getMap(bnglContent,'process')
 
@@ -468,6 +494,7 @@ class ProcessAnnotation(webapp2.RequestHandler):
             except xmlrpclib.ProtocolError:
                 logging.error('Cannot calculate maps')
             try:
+                #get time series information from the remote server
                 timeSeries = getSeries(bnglContent)
                 if timeSeries['gdatStr'] != '':
                     gcs_filename = '/{1}/{0}.gdat'.format(element,bucket_name)
@@ -479,7 +506,7 @@ class ProcessAnnotation(webapp2.RequestHandler):
                     modelSubmission['timeSeriesJson'] = {}
             except xmlrpclib.ProtocolError:
                 logging.error('Cannot execute bngl file') 
-
+            #process annotation information. This also calls the server
             parsedAnnotationDict,tagArray = processAnnotations(bnglContent)
             if 'author' in parsedAnnotationDict:
                 modelSubmission['author'] = [parsedAnnotationDict['author']]
@@ -501,9 +528,9 @@ class ProcessAnnotation(webapp2.RequestHandler):
                 modelSubmission['author'] = convert(tagArray['author'])
 
             modelSubmission['fileInfo'] = bnglContent
-            #modelObject = ModelInfo.create(modelSubmission,'2')
+            
+            ##send the model object to the actual method that creates the database entry
             modelObject = docs.ModelDoc.buildModel(modelSubmission)
-            #print modelObject
             modelObject.put()
 
 class Query(webapp2.RequestHandler):
@@ -887,7 +914,7 @@ def boilerplateParams(uri):
 
 class Description(webapp2.RequestHandler):
     '''
-    details model description
+    details model description. Loads a model from a file identifier and creates an internal datastructure for dispaly the user
     '''
     def get(self):
         #query = ModelInfo.name
