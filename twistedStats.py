@@ -36,6 +36,10 @@ bngDistro  = '/home/ubuntu/bionetgen/bng2/'
 #def updateDictionary(tmpArray,key,newInfo):
 
 def resolveAnnotations(annotations):
+    """
+    receives references to external databases (uniprot etc) and resolves
+    them to actual biological names
+    """
     tmpArray = {}
     futures = []
     with concurrent.futures.ProcessPoolExecutor(max_workers=8) as executor:
@@ -60,13 +64,16 @@ def resolveAnnotations(annotations):
     return finalArray
 
 def removeTags(taggedInformation):
-        taggedInformation2 = taggedInformation.decode('ascii','ignore')
-        try:
-            goGrammar = pyp.Suppress('<' + pyp.Word(pyp.alphanums) + '>') +  pyp.Word(pyp.alphanums + pyp.alphas8bit + ' .,_-') + pyp.Suppress('</' + pyp.Word(pyp.alphanums) + '>')
-            tmp = goGrammar.parseString(str(taggedInformation2))
-        except pyp.ParseException:
-            tmp = [taggedInformation2]
-        return tmp[0]
+    """
+    removes xml tags from a given string
+    """    
+    taggedInformation2 = taggedInformation.decode('ascii','ignore')
+    try:
+        goGrammar = pyp.Suppress('<' + pyp.Word(pyp.alphanums) + '>') +  pyp.Word(pyp.alphanums + pyp.alphas8bit + ' .,_-') + pyp.Suppress('</' + pyp.Word(pyp.alphanums) + '>')
+        tmp = goGrammar.parseString(str(taggedInformation2))
+    except pyp.ParseException:
+        tmp = [taggedInformation2]
+    return tmp[0]
     
 def resolveAnnotation(annotation):
     if not hasattr(resolveAnnotation, 'db'):
@@ -214,6 +221,13 @@ def generateTimeSeries(bnglFile):
     return fileName
 
 def generateContactMap(bnglFile,graphType):
+    """
+    call's the visualize.pl script to generate graphs 
+
+    --arguments
+    bnglFile: a string containing a bngl definition
+    graphType: can be regulatory,contactmap etc. The kind of graph that we will obtain
+    """
     import signal
     import os
     import time
@@ -257,6 +271,9 @@ def inheritColor(gmlText,node):
 
 
 def gml2cyjson(gmlText):
+    """
+    Converts a gml graph definition to the format that cytoscape.js expects
+    """
     import random
     r = lambda: random.randint(0,255)
 
@@ -358,6 +375,10 @@ def gml2cyjson(gmlText):
     return jsonDict
 
 def gdat2c3json(gdatText):
+    """
+    converts the contents of a gdat file to the time series definition that
+    c3.js expects
+    """
     #from collections import OrderedDict
     gdatlines = gdatText.split('\n')
     labels = gdatlines[0].split()[1:]
@@ -376,53 +397,64 @@ def gdat2c3json(gdatText):
      
 
 def tmpGenerateCont(bnglFile,graphType):
-        fileName = generateContactMap(bnglFile, graphType)
-        try:
-            gml = nx.read_gml(fileName)
-            result = gml2cyjson(gml)
-        except IOError:
-            result = '{}'
-        
-        with open('out.json','w') as f:
-            return json.dumps(result,f,indent=1, separators=(',', ': '))
+    """
+
+    """
+    fileName = generateContactMap(bnglFile, graphType)
+    try:
+        gml = nx.read_gml(fileName)
+        result = gml2cyjson(gml)
+    except IOError:
+        result = '{}'
+    
+    with open('out.json','w') as f:
+        return json.dumps(result,f,indent=1, separators=(',', ': '))
         
 
-def simulateFile(bnglFile):
-    pass
 
 def getContactMap(bnglFile,graphType):
-        '''
-        calls John's bgn map generator
-        '''
-        fileName = generateContactMap(bnglFile, graphType)
-        try:
-            with open(fileName) as f:
-                gmlText = f.read()
-            gml = nx.read_gml(fileName)
-        except IOError:
-            return {'jsonStr':'','gmlStr':''}
-        result = gml2cyjson(gml)
-        jsonStr = json.dumps(result,indent=1, separators=(',', ': '))
-        result = {'jsonStr':jsonStr,'gmlStr':gmlText}
-        print gmlText
-        #remove(fileName)
-        return result
+    '''
+    sends a bngl string definition to be solved for obtaining a graph representation.
+    packages the resulting gml definition in the appropiate data structures
+    '''
+    fileName = generateContactMap(bnglFile, graphType)
+    try:
+        with open(fileName) as f:
+            gmlText = f.read()
+        gml = nx.read_gml(fileName)
+    except IOError:
+        return {'jsonStr':'','gmlStr':''}
+    result = gml2cyjson(gml)
+    jsonStr = json.dumps(result,indent=1, separators=(',', ': '))
+    result = {'jsonStr':jsonStr,'gmlStr':gmlText}
+    print gmlText
+    #remove(fileName)
+    return result
     
 def getTimeSeries(bnglFile):
-        fileName = generateTimeSeries(bnglFile)
-        try:
-            if fileName == None:
-                raise IOError
-            with open(fileName) as f:
-                gdatText = f.read()
-        except IOError:
-            return {'jsonStr':'','gdatStr':''}
-        result = gdat2c3json(gdatText)
-        jsonStr = json.dumps(result,indent=1,separators=(',',':'))
-        result = {'jsonStr':jsonStr,'gdatStr':gdatText}
-        return result
-class AnnotationServer(xmlrpc.XMLRPC):
 
+    """
+    calls the bng solver and packages the result into appropiate output structures
+    to give back to rulehub (basically a gdat definition and a json definition 
+        for visualization)    
+    """
+    fileName = generateTimeSeries(bnglFile)
+    try:
+        if fileName == None:
+            raise IOError
+        with open(fileName) as f:
+            gdatText = f.read()
+    except IOError:
+        return {'jsonStr':'','gdatStr':''}
+    result = gdat2c3json(gdatText)
+    jsonStr = json.dumps(result,indent=1,separators=(',',':'))
+    result = {'jsonStr':jsonStr,'gdatStr':gdatText}
+    return result
+class AnnotationServer(xmlrpc.XMLRPC):
+    """
+    main server class. exposes which methods are available to clients
+    that connect to this server
+    """
 
     def xmlrpc_resolveAnnotations(self,annotations):
 

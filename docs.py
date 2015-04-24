@@ -234,7 +234,7 @@ class ModelDoc(BaseDocumentManager):
     
     # now update the entity
     def _tx():
-      # Check whether the product entity exists. If so, we want to update
+      # Check whether the model entity exists. If so, we want to update
       # from the params, but preserve its ratings-related info.
       model = models.ModelInfo.get_by_id(doc_id)
       if model:  #update

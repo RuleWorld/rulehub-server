@@ -8,11 +8,35 @@ class AnnotationInfo(ndb.Model):
     database = ndb.StringProperty()
     databaseID = ndb.StringProperty()
 
+class ContentInfo(ndb.Model):
+    content = ndb.BlobKeyProperty() #BlobInfo(blobkey)
+    date = ndb.DateTimeProperty(auto_now_add=True)
+    contactMap = ndb.BlobKeyProperty()
+    contactMapJson = ndb.JsonProperty()
+    processMap = ndb.BlobKeyProperty()
+    timeSeries = ndb.BlobKeyProperty()
+    timeSeriesJson = ndb.JsonProperty()
+    processMapJson = ndb.JsonProperty()     
+
+    @classmethod
+    def create(cls, params, doc_id):
+        content = cls(content=params['content'])
+        if 'timeSeries' in params:
+            content.timeSeries = params['timeSeries']
+            content.timeSeriesJson = params['timeSeriesJson']
+        if 'processMap' in params:
+            content.processMap=params['processMap']
+            content.processMapJson=params['processMapJson']
+        if 'contactMap' in params:
+            content.contactMap=params['contactMap']
+            content.contactMapJson=params['contactMapJson']
+        return content
 
 
 class ModelInfo(ndb.Model):
     """Models an individual Guestbook entry with author, content, and date."""
     author = ndb.StringProperty(repeated=True)
+    '''
     content = ndb.BlobKeyProperty() #BlobInfo(blobkey)
     contactMap = ndb.BlobKeyProperty()
     contactMapJson = ndb.JsonProperty()
@@ -20,6 +44,8 @@ class ModelInfo(ndb.Model):
     timeSeries = ndb.BlobKeyProperty()
     timeSeriesJson = ndb.JsonProperty()
     processMapJson = ndb.JsonProperty()     
+    '''
+    contentHistory = ndb.StructuredProperty(ContentInfo,repeated=True)
     name = ndb.StringProperty()
     description = ndb.StringProperty()
     date = ndb.DateTimeProperty(auto_now_add=True)
@@ -51,15 +77,8 @@ class ModelInfo(ndb.Model):
             prod.notes = params['notes']
         if 'tags' in params:
             prod.tags=params['tags']
-        if 'timeSeries' in params:
-            prod.timeSeries = params['timeSeries']
-            prod.timeSeriesJson = params['timeSeriesJson']
-        if 'processMap' in params:
-            prod.processMap=params['processMap']
-            prod.processMapJson=params['processMapJson']
-        if 'contactMap' in params:
-            prod.contactMap=params['contactMap']
-            prod.contactMapJson=params['contactMapJson']
+        content = ContentInfo.create(params)
+        prod.contentHistory = [content]
         #if 'structuredTags' in params:
          #   prod.structuredTags=params['structuredTags'],
         #prod.put()
